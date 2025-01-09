@@ -2,13 +2,13 @@
 
 Este projeto implementa um sistema de validação para o framework **Origins**, permitindo que os usuários definam e utilizem regras de validação personalizadas.
 
-## 📌 Funcionalidades
+## Funcionalidades
 - Validações baseadas em atributos (`#[Attribute]`).
 - Suporte a validações nativas (`NotEmpty`, `Email`, etc.).
 - Possibilidade de criação de validações personalizadas.
 - Integração com controllers do **Origins** através de `#[Valid]`.
 
-## 📦 Instalação
+## Instalação
 
 Este validador depende do **framework Origins**. Certifique-se de que ele já está instalado antes de continuar.
 
@@ -17,8 +17,8 @@ Este validador depende do **framework Origins**. Certifique-se de que ele já es
    composer require daniel/origins-validator
    ```
 
-## 🚀 Como Usar
-### 1️⃣ Criando um Modelo com Validações
+## Como Usar
+### 1 Criando um Modelo com Validações
 ```php
 use Daniel\Validator\Valid\Email;
 use Daniel\Validator\Valid\NotEmpty;
@@ -33,7 +33,7 @@ final class ModelValidation
 }
 ```
 
-### 2️⃣ Criando um Controller com Validação
+### 2 Criando um Controller com Validação
 ```php
 use Daniel\Origins\Controller;
 use Daniel\Origins\Get;
@@ -51,7 +51,7 @@ final class TesteController
 }
 ```
 
-## ✨ Criando uma Validação Personalizada
+## Criando uma Validação Personalizada
 1. Crie um atributo que estenda `AbstractValidation`:
    ```php
    use Daniel\Validator\Props\AbstractValidation;
@@ -86,10 +86,10 @@ final class TesteController
    ```
 3. Agora você pode usar `#[MinLength(5)]` em suas propriedades!
 
-## 📜 Licença
+## Licença
 Este projeto é distribuído sob a licença MIT.
 
 ---
 
-Para mais informações, acesse [Origins Framework](https://github.com/DanielTM999/origins). 🚀
+Para mais informações, acesse [Origins Framework](https://github.com/DanielTM999/origins). 
 
