@@ -14,7 +14,7 @@ Este validador depende do **framework Origins**. Certifique-se de que ele já es
 
 1. Adicione o validador ao seu projeto utilizando o Composer:
    ```sh
-   composer require daniel/origins-validator
+   composer require danieltm/validation-io
    ```
 
 ## Como Usar
