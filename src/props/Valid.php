@@ -4,7 +4,7 @@
 
     use Attribute;
 
-    #[Attribute(Attribute::TARGET_METHOD)]
+    #[Attribute(Attribute::TARGET_METHOD|Attribute::TARGET_PROPERTY)]
     final class Valid
     {
         public function __construct(public string $class) {
