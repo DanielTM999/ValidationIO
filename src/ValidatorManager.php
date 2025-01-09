@@ -33,7 +33,6 @@
             }
             
             $reflectionClassReference = new ReflectionClass($validationClassReference);
-            $enableNullValidation = $this->isNullValidation($reflectionClassReference);
 
             $variables = $reflectionClassReference->getProperties();
             $model = null;
@@ -44,7 +43,7 @@
             }
 
             foreach($variables as $var){
-                $this->validateField($model, $var, $request, $enableNullValidation);
+                $this->validateField($model, $var, $request);
             }
             $indexInject = $injectModel["index"] ?? -1;
             if($indexInject >= 0){
@@ -54,7 +53,8 @@
             return $model;
         }
 
-        private function validateField(object &$model, ReflectionProperty $var, array &$reqBody, bool $ignoreIfNull = false){
+        private function validateField(object &$model, ReflectionProperty $var, array &$reqBody){
+            $enableNullValidation = $this->isNullValidation($var);
             $varName = $var->getName();
             $atributes = $var->getAttributes();
             if(isset($reqBody[$varName])){
@@ -65,7 +65,7 @@
                 $callValidObj = ($callValidObj) ? $varType->getName() !== 'mixed' && class_exists($varType->getName()) : false;
 
                 if ($callValidObj){
-                    $this->validateObject($model, $var, $value, $value);
+                    $this->validateObject($model, $var, $value);
                 }else{
                     $var->setValue($model, $value);
                     foreach($atributes as $atribute){
@@ -87,16 +87,16 @@
                 }
                 
             }else{
-                if(!$ignoreIfNull){
+                if(!$enableNullValidation){
                     throw new ArgumentNotFoundException("Argumento '$varName' não encontrado na requisção");
                 }
             }
         }
 
-        private function validateObject(object &$model, ReflectionProperty $var, array $req, &$value){
+        private function validateObject(object &$model, ReflectionProperty $var, array $req){
             $typeName =  $var->getType()->getName();
             $reflectionClassReference = new ReflectionClass($typeName);
-            $enableNullValidation = $this->isNullValidation($reflectionClassReference);
+            $enableNullValidation = $this->isNullValidation($var);
             $validAtribute = $var->getAttributes(Valid::class);
             if(empty($validAtribute)){return;}
             $variables = $reflectionClassReference->getProperties();
@@ -132,7 +132,7 @@
             return $instance->getMessage();
         }
 
-        private function isNullValidation(ReflectionClass $reflectionClassReference): bool{
+        private function isNullValidation(ReflectionProperty $reflectionClassReference): bool{
             $enableNullValidation = false;
 
             try {
