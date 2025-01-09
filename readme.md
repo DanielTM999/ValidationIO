@@ -52,12 +52,13 @@ final class TesteController
 ```
 
 ## Criando uma Validação Personalizada
-1. Crie um atributo que estenda `AbstractValidation`:
+1. Crie um atributo que estenda `AbstractValidation` e informe o provedor de validação:
    ```php
    use Daniel\Validator\Props\AbstractValidation;
    use Attribute;
 
    #[Attribute(Attribute::TARGET_PROPERTY)]
+   #[ValidationProvider(new MinLengthValidator())]
    class MinLength extends AbstractValidation
    {
        public function __construct(private int $length, string $message = "Valor muito curto.") {
