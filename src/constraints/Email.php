@@ -1,6 +1,6 @@
 <?php
 
-namespace Daniel\Validator\Valid;
+namespace Daniel\Validator\constraints;
 
 use Attribute;
 use Daniel\Validator\Props\AbstractValidation;
