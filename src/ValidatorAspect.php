@@ -7,11 +7,13 @@
     use Daniel\Validator\Exceptions\ValidationMethodNotAllowedException;
     use Daniel\Validator\Props\InjectValidation;
     use Daniel\Validator\Props\Valid;
+    use Override;
     use ReflectionMethod;
 
     final class ValidatorAspect extends Aspect
     {
 
+        #[Override]
         public function aspectBefore(object &$controllerEntity, ReflectionMethod &$method, array &$varArgs){
             $validAtribute = $method->getAttributes(Valid::class);
             if(empty($validAtribute)){return;}
@@ -39,6 +41,11 @@
             if($indexInject >= 0){
                 $varArgs[$indexInject] = $model;
             }
+        }
+
+        #[Override]
+        public function aspectAfter(object &$controllerEntity, ReflectionMethod &$method, array &$varArgs){
+            
         }
 
         private function injectModelValidation(ReflectionMethod &$method){
