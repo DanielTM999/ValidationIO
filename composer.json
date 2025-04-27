@@ -15,6 +15,6 @@
     ],
     "require": {
         "php": "^8.0",
-        "danieltm/origins": "^1.6"
+        "danieltm/origins": "^2.0"
     }
 }
