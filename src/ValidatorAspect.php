@@ -2,7 +2,8 @@
 
     namespace Daniel\Validator;
 
-    use Daniel\Origins\Aspect;
+use Daniel\Origins\AnnotationsUtils;
+use Daniel\Origins\Aop\Aspect;
     use Daniel\Origins\Request;
     use Daniel\Validator\Exceptions\ValidationMethodNotAllowedException;
     use Daniel\Validator\Props\InjectValidation;
@@ -14,11 +15,13 @@
     {
 
         #[Override]
+        public function pointCut(object &$controllerEntity, ReflectionMethod &$method, array &$varArgs): bool{
+            return AnnotationsUtils::isAnnotationPresent($method, Valid::class);
+        }
+
+        #[Override]
         public function aspectBefore(object &$controllerEntity, ReflectionMethod &$method, array &$varArgs){
-            $validAtribute = $method->getAttributes(Valid::class);
-            if(empty($validAtribute)){return;}
-            $validArgs = $validAtribute[0]->getArguments();
-            
+            $validArgs = AnnotationsUtils::getAnnotation($method, Valid::class);            
             assert(isset($validArgs[0]), "Argumentos inválidos: não foram encontrados argumentos.");
             
             $request = null;
@@ -34,7 +37,9 @@
             if(!isset($request)){
                 throw new ValidationMethodNotAllowedException("Método não permitido para validação não possue uma 'Request' no metodo");
             }
+
             $validator = ValidatorManager::getValidator($validationClassReference, $request->getBody());
+    
             $model = $validator->executeValidation();
             $injectModel = $this->injectModelValidation($method);
             $indexInject = $injectModel["index"] ?? -1;
@@ -44,8 +49,8 @@
         }
 
         #[Override]
-        public function aspectAfter(object &$controllerEntity, ReflectionMethod &$method, array &$varArgs){
-            
+        public function aspectAfter(object &$controllerEntity, ReflectionMethod &$method, array &$varArgs, object|null &$result){
+            return $result;
         }
 
         private function injectModelValidation(ReflectionMethod &$method){

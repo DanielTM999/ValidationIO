@@ -3,7 +3,7 @@
         'name' => 'danieltm/validation-io',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '9ca04e2173543ccb9e22087e9aa810d4c7fc44fa',
+        'reference' => 'a182e4465df2eff3289e2adcaf4757542e7a2d73',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'danieltm/origins' => array(
-            'pretty_version' => 'V2.0.0',
-            'version' => '2.0.0.0',
-            'reference' => '723509e561d7ead8702207b26041d7dfbe0eeb4b',
+            'pretty_version' => 'V2.0.1',
+            'version' => '2.0.1.0',
+            'reference' => 'ea09e0c5dc1b9fee58c455e19a05f8a2eb6a69b4',
             'type' => 'library',
             'install_path' => __DIR__ . '/../danieltm/origins',
             'aliases' => array(),
@@ -22,7 +22,7 @@
         'danieltm/validation-io' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '9ca04e2173543ccb9e22087e9aa810d4c7fc44fa',
+            'reference' => 'a182e4465df2eff3289e2adcaf4757542e7a2d73',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

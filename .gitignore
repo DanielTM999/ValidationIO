@@ -1,3 +1,5 @@
 index.php
 .env
+.htaccess
 /src/test
+/src/AppExemple
