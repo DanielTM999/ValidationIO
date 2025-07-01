@@ -21,7 +21,7 @@ use Daniel\Origins\Aop\Aspect;
 
         #[Override]
         public function aspectBefore(object &$controllerEntity, ReflectionMethod &$method, array &$varArgs){
-            $validArgs = AnnotationsUtils::getAnnotation($method, Valid::class);            
+            $validArgs = AnnotationsUtils::getAnnotationArgs($method, Valid::class);            
             assert(isset($validArgs[0]), "Argumentos inválidos: não foram encontrados argumentos.");
             
             $request = null;

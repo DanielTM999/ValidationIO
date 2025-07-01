@@ -2,22 +2,28 @@
 
     namespace Daniel\Validator;
 
+    use Daniel\Origins\AnnotationsUtils;
     use Daniel\Validator\Exceptions\ArgumentNotFoundException;
     use Daniel\Validator\Exceptions\ValidationException;
     use Daniel\Validator\Exceptions\ValidationMethodNotAllowedException;
     use Daniel\Validator\Props\AbstractValidation;
-    use Daniel\Validator\Props\NullableValidation;
+    use Daniel\Validator\constraints\NotNull;
+use Daniel\Validator\Exceptions\CompositeValidationException;
+use Daniel\Validator\Props\ProviderExtractor;
     use Daniel\Validator\Props\Valid;
-    use Daniel\Validator\Props\ValidationProvider;
     use ReflectionAttribute;
     use ReflectionClass;
     use ReflectionProperty;
 
     final class ValidatorManager 
     {
+
+        private array $errors;
+
         private function __construct(private string $className, private array $obj) {
             $this->className = $className;
             $this->obj = $obj;
+            $this->errors = [];
         }
 
         public static function getValidator(string $className, array $obj): ValidatorManager{
@@ -36,6 +42,7 @@
 
             $variables = $reflectionClassReference->getProperties();
             $model = null;
+            
             try {
                 $model = $reflectionClassReference->newInstance();
             } catch (\Throwable $th) {
@@ -45,12 +52,21 @@
             foreach($variables as $var){
                 $this->validateField($model, $var, $request);
             }
+
+            if($this->hasErrors()){
+                throw new CompositeValidationException($this->errors);
+            }
+
             $indexInject = $injectModel["index"] ?? -1;
             if($indexInject >= 0){
                 $varArgs[$indexInject] = $model;
             }
 
             return $model;
+        }
+
+        public function hasErrors(){
+            return !empty($this->errors);
         }
 
         private function validateField(object &$model, ReflectionProperty $var, array &$reqBody){
@@ -73,11 +89,12 @@
                         $parentClass = $reflection->getParentClass();
                         $parentClassName = $parentClass ? $parentClass->getName() : null;
                         if ($parentClass && $parentClassName === AbstractValidation::class){
-                            $provider = $this->getProviderByAtrubute($atribute);
+                            $provider = $this->getProviderByAtrubute($reflection);
+                            $this->setAtrubuteArgs($provider, $atribute);
                             $result = $provider->isValid($value);
                             if(!$result){
                                 $msg =  $this->getMessageByAtribute($atribute);
-                                throw new ValidationException($msg);
+                                $this->errors[] = new ValidationException($msg);
                             }
                         }
                         unset($reflection);
@@ -88,7 +105,7 @@
                 
             }else{
                 if(!$enableNullValidation){
-                    throw new ArgumentNotFoundException("Argumento '$varName' não encontrado na requisção");
+                    $this->errors[] = new ArgumentNotFoundException("Argumento '$varName' não encontrado na requisção");
                 }
             }
         }
@@ -109,22 +126,13 @@
             }
         }
 
-        private function getProviderByAtrubute(ReflectionAttribute $attr): BaseValidator{
-            $AttName = $attr->getName();
-            $reflect = new ReflectionClass($AttName);
-            $providerAttr = $reflect->getAttributes(ValidationProvider::class);
+        private function setAtrubuteArgs(BaseValidator &$validator, ReflectionAttribute $attr){
+            $args = AnnotationsUtils::getAnnotationArgs($attr, "");
+            $validator->setParamArgs($args);
+        }
 
-            if(empty($providerAttr)){
-                throw new ArgumentNotFoundException("Atributo '$AttName' sem provedor");
-            }
-            $providerList = $providerAttr[0]->getArguments();
-
-            if(empty($providerList)){
-                throw new ArgumentNotFoundException("Atributo '$AttName' sem provedor");
-            }
-
-            return $providerList[0];
-
+        private function getProviderByAtrubute(ReflectionClass $attr): BaseValidator{
+            return ProviderExtractor::getProvider($attr);
         }
 
         private function getMessageByAtribute(ReflectionAttribute $attr){
@@ -133,25 +141,7 @@
         }
 
         private function isNullValidation(ReflectionProperty $reflectionClassReference): bool{
-            $enableNullValidation = false;
-
-            try {
-                $atributes = $reflectionClassReference->getAttributes(NullableValidation::class);
-                
-                
-                if(!empty($atributes)){
-                    $targetAtrubute =  $atributes[0];
-                    
-                    $atributesArgs = $targetAtrubute->getArguments();
-
-                    if(!empty($atributesArgs)){
-                        $enableNullValidation = $atributesArgs[0];
-                    }
-                }
-                return $enableNullValidation;
-            } catch (\Throwable $th) {
-                return $enableNullValidation;
-            }
+            return !AnnotationsUtils::isAnnotationPresent($reflectionClassReference, NotNull::class);
         }
 
     }

@@ -4,7 +4,7 @@
 
     use Daniel\Validator\BaseValidator;
 
-    final class EmailValidator implements BaseValidator
+    final class EmailValidator extends BaseValidator
     {
         public function isValid($value): bool
         {

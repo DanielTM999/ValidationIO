@@ -8,13 +8,13 @@
     use Daniel\Validator\Provider\LengthValidator;
 
     #[Attribute(Attribute::TARGET_PROPERTY)]
-    #[ValidationProvider(new LengthValidator(LengthValidator::TYPE_MIN))]
-    final class MinLength extends AbstractValidation
+    #[ValidationProvider(new LengthValidator(LengthValidator::TYPE_MAX))]
+    final class MaxLength extends AbstractValidation
     {
-        public function __construct(int $minValue = 1, string $message = "")
+        public function __construct(int $maxValue = 5, string $message = "")
         {
             if (empty($message)) {
-                $message = "O valor é menor que o limite mínimo de caracteres permitido: $minValue";
+                $message = "O valor excedeu o limite máximo de caracteres permitido: $maxValue";
             }
             parent::__construct($message);
         }
