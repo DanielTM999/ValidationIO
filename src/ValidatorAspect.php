@@ -49,7 +49,7 @@ use Daniel\Origins\Aop\Aspect;
         }
 
         #[Override]
-        public function aspectAfter(object &$controllerEntity, ReflectionMethod &$method, array &$varArgs, object|null &$result){
+        public function aspectAfter(object &$controllerEntity, ReflectionMethod &$method, array &$varArgs, mixed &$result){
             return $result;
         }
 
