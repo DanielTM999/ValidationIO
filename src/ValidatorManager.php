@@ -3,13 +3,15 @@
     namespace Daniel\Validator;
 
     use Daniel\Origins\AnnotationsUtils;
-    use Daniel\Validator\Exceptions\ArgumentNotFoundException;
+use Daniel\Origins\Log;
+use Daniel\Validator\Exceptions\ArgumentNotFoundException;
     use Daniel\Validator\Exceptions\ValidationException;
     use Daniel\Validator\Exceptions\ValidationMethodNotAllowedException;
     use Daniel\Validator\Props\AbstractValidation;
     use Daniel\Validator\constraints\NotNull;
-use Daniel\Validator\Exceptions\CompositeValidationException;
-use Daniel\Validator\Props\ProviderExtractor;
+    use Daniel\Validator\Exceptions\CompositeValidationException;
+    use Daniel\Validator\Props\ListOf;
+    use Daniel\Validator\Props\ProviderExtractor;
     use Daniel\Validator\Props\Valid;
     use ReflectionAttribute;
     use ReflectionClass;
@@ -46,7 +48,7 @@ use Daniel\Validator\Props\ProviderExtractor;
             try {
                 $model = $reflectionClassReference->newInstance();
             } catch (\Throwable $th) {
-
+                throw new ValidationException("Erro ao instanciar a classe '$validationClassReference': " . $th->getMessage());
             }
 
             foreach($variables as $var){
@@ -57,11 +59,6 @@ use Daniel\Validator\Props\ProviderExtractor;
                 throw new CompositeValidationException($this->errors);
             }
 
-            $indexInject = $injectModel["index"] ?? -1;
-            if($indexInject >= 0){
-                $varArgs[$indexInject] = $model;
-            }
-
             return $model;
         }
 
@@ -70,59 +67,84 @@ use Daniel\Validator\Props\ProviderExtractor;
         }
 
         private function validateField(object &$model, ReflectionProperty $var, array &$reqBody){
-            $enableNullValidation = $this->isNullValidation($var);
             $varName = $var->getName();
-            $atributes = $var->getAttributes();
-            if(isset($reqBody[$varName])){
-                $value = $reqBody[$varName];
-                $varType = $var->getType();
-                $callValidObj = false;
-                $callValidObj = isset($varType);
-                $callValidObj = ($callValidObj) ? $varType->getName() !== 'mixed' && class_exists($varType->getName()) : false;
+            $attributes = $var->getAttributes();
+            
+            $varType = $var->getType();
+            $typeName = ($varType instanceof \ReflectionNamedType) ? $varType->getName() : null;
+            $isNullable = ($varType instanceof \ReflectionNamedType) && $varType->allowsNull();
+            $isRequired = !$this->isNullValidation($var) && !$isNullable;
 
-                if ($callValidObj){
-                    $this->validateObject($model, $var, $value);
-                }else{
-                    $var->setValue($model, $value);
-                    foreach($atributes as $atribute){
-                        $reflection = new ReflectionClass($atribute->getName());
-                        $parentClass = $reflection->getParentClass();
-                        $parentClassName = $parentClass ? $parentClass->getName() : null;
-                        if ($parentClass && $parentClassName === AbstractValidation::class){
-                            $provider = $this->getProviderByAtrubute($reflection);
-                            $this->setAtrubuteArgs($provider, $atribute);
-                            $result = $provider->isValid($value);
-                            if(!$result){
-                                $msg =  $this->getMessageByAtribute($atribute);
-                                $this->errors[] = new ValidationException($msg);
-                            }
-                        }
-                        unset($reflection);
-                    }
-    
-                    return;
+            if (!array_key_exists($varName, $reqBody)) {
+                if ($isRequired) {
+                    $this->errors[] = new ArgumentNotFoundException("Argumento '$varName' não encontrado na requisição");
                 }
-                
-            }else{
-                if(!$enableNullValidation){
-                    $this->errors[] = new ArgumentNotFoundException("Argumento '$varName' não encontrado na requisção");
-                }
+                return;
             }
+
+            $value = $reqBody[$varName];
+            $isArray = $typeName === 'array';
+            $isObject = $typeName && class_exists($typeName);
+            $isValidatableObject = $isObject && !empty($var->getAttributes(Valid::class));
+
+            if ($isArray) {
+                $this->applyValidations($attributes, $value);
+                $this->validateArray($model, $var, $value);
+            }else if ($isValidatableObject){
+                $this->validateObject($model, $var, $value);
+            }else{
+                $var->setValue($model, $value);
+                $this->applyValidations($attributes, $value);
+            }
+
         }
 
         private function validateObject(object &$model, ReflectionProperty $var, array $req){
             $typeName =  $var->getType()->getName();
             $reflectionClassReference = new ReflectionClass($typeName);
-            $enableNullValidation = $this->isNullValidation($var);
-            $validAtribute = $var->getAttributes(Valid::class);
-            if(empty($validAtribute)){return;}
+
             $variables = $reflectionClassReference->getProperties();
             
             $modelInterno = $reflectionClassReference->newInstance();
             $var->setValue($model, $modelInterno);
             
             foreach($variables as $var){
-                $this->validateField($modelInterno, $var, $req, $enableNullValidation);
+                $this->validateField($modelInterno, $var, $req);
+            }
+        }
+
+        private function validateDetachedObject(ReflectionClass $reflectionClassReference, array $req){
+            $variables = $reflectionClassReference->getProperties();
+            
+            $modelInterno = $reflectionClassReference->newInstance();
+            foreach($variables as $var){
+                $this->validateField($modelInterno, $var, $req);
+            }
+            return $modelInterno;
+        }
+
+        private function validateArray(object &$model, ReflectionProperty $var, array $req){
+            $validList = AnnotationsUtils::isAnnotationPresent($var, ListOf::class);
+            if($validList){
+                $arrayModel = [];
+                $className = AnnotationsUtils::getAnnotationArgs($var, ListOf::class)[0] ?? null;
+                if (!$className || !class_exists($className)) {
+                    $this->errors[] = new ValidationException("Classe da lista não encontrada ou inválida");
+                    return;
+                }
+                if(class_exists($className)){
+                    $reflectionClassReference = new ReflectionClass($className);
+                    
+                    foreach($req as $toValid){
+                        $arrayModel[] = $this->validateDetachedObject($reflectionClassReference, $toValid);
+                    }
+
+                    $var->setValue($model, $arrayModel);
+                }else{
+                    $this->errors[] = new ValidationException("Classe da lista não encontrada ou inválida");
+                }
+            }else{
+                $var->setValue($model, $req);
             }
         }
 
@@ -143,6 +165,25 @@ use Daniel\Validator\Props\ProviderExtractor;
         private function isNullValidation(ReflectionProperty $reflectionClassReference): bool{
             return !AnnotationsUtils::isAnnotationPresent($reflectionClassReference, NotNull::class);
         }
+
+        private function applyValidations(array $attributes, mixed $value): void {
+            foreach ($attributes as $attribute) {
+                $reflection = new ReflectionClass($attribute->getName());
+                $parentClass = $reflection->getParentClass();
+                $parentClassName = $parentClass ? $parentClass->getName() : null;
+                if ($parentClass && $parentClassName === AbstractValidation::class){
+                    $provider = $this->getProviderByAtrubute($reflection);
+                    $this->setAtrubuteArgs($provider, $attribute);
+                    $result = $provider->isValid($value);
+                    if(!$result){
+                        $msg =  $this->getMessageByAtribute($attribute);
+                        $this->errors[] = new ValidationException($msg);
+                    }
+                }
+                unset($reflection);
+            }
+        }
+
 
     }
     
