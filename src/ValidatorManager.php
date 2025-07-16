@@ -85,9 +85,10 @@ use Daniel\Validator\Exceptions\ArgumentNotFoundException;
             $value = $reqBody[$varName];
             $isArray = $typeName === 'array';
             $isObject = $typeName && class_exists($typeName);
-            $isValidatableObject = $isObject && !empty($var->getAttributes(Valid::class));
+            $applyValidation = !empty($var->getAttributes(Valid::class));
+            $isValidatableObject = $isObject && $applyValidation;
 
-            if ($isArray) {
+            if ($isArray && $applyValidation) {
                 $this->applyValidations($attributes, $value);
                 $this->validateArray($model, $var, $value);
             }else if ($isValidatableObject){
