@@ -2,8 +2,8 @@
 
     namespace Daniel\Validator;
 
-use Daniel\Origins\AnnotationsUtils;
-use Daniel\Origins\Aop\Aspect;
+    use Daniel\Origins\AnnotationsUtils;
+    use Daniel\Origins\Aop\Aspect;
     use Daniel\Origins\Request;
     use Daniel\Validator\Exceptions\ValidationMethodNotAllowedException;
     use Daniel\Validator\Props\InjectValidation;
@@ -24,21 +24,14 @@ use Daniel\Origins\Aop\Aspect;
             $validArgs = AnnotationsUtils::getAnnotationArgs($method, Valid::class);            
             assert(isset($validArgs[0]), "Argumentos inválidos: não foram encontrados argumentos.");
             
-            $request = null;
+            $request = $this->getRequestBody();
             $validationClassReference = $validArgs[0];
-
-            foreach($varArgs as $arg){
-                if (isset($arg) && $arg instanceof Request){
-                    $request = $arg;
-                    break;
-                }
-            }
 
             if(!isset($request)){
                 throw new ValidationMethodNotAllowedException("Método não permitido para validação não possue uma 'Request' no metodo");
             }
 
-            $validator = ValidatorManager::getValidator($validationClassReference, $request->getBody());
+            $validator = ValidatorManager::getValidator($validationClassReference, $request);
     
             $model = $validator->executeValidation();
             $injectModel = $this->injectModelValidation($method);
@@ -66,6 +59,17 @@ use Daniel\Origins\Aop\Aspect;
                 $index++;
             }
             return null;
+        }
+
+        private function getRequestBody(){
+            $body = file_get_contents('php://input');
+            try {
+                $jsonData = json_decode($body, true);
+            } catch (\Throwable $th) {
+                $jsonData = null;
+            }
+
+            return $jsonData;
         }
 
     }
