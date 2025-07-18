@@ -151,6 +151,9 @@ use Daniel\Validator\Exceptions\ArgumentNotFoundException;
 
         private function setAtrubuteArgs(BaseValidator &$validator, ReflectionAttribute $attr){
             $args = AnnotationsUtils::getAnnotationArgs($attr, "");
+            if(array_keys($args) !== range(0, count($args) - 1)){
+                $args = array_values($args);
+            }
             $validator->setParamArgs($args);
         }
 
