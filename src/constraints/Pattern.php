@@ -12,7 +12,7 @@
     #[ValidationProvider(new PatternValidator())]
     final class Pattern extends AbstractValidation
     {
-        public function __construct(string $message = "O valor informado não corresponde ao esperado.")
+        public function __construct(string $pattern, string $message = "O valor informado não corresponde ao esperado.")
         {
             parent::__construct($message);
         }
