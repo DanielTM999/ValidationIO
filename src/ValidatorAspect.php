@@ -33,32 +33,12 @@
 
             $validator = ValidatorManager::getValidator($validationClassReference, $request);
     
-            $model = $validator->executeValidation();
-            $injectModel = $this->injectModelValidation($method);
-            $indexInject = $injectModel["index"] ?? -1;
-            if($indexInject >= 0){
-                $varArgs[$indexInject] = $model;
-            }
+            $validator->executeValidation();
         }
 
         #[Override]
         public function aspectAfter(object &$controllerEntity, ReflectionMethod &$method, array &$varArgs, mixed &$result){
             return $result;
-        }
-
-        private function injectModelValidation(ReflectionMethod &$method){
-            $index = 0;
-            foreach ($method->getParameters() as $param){
-                $attributes = $param->getAttributes(InjectValidation::class);
-                if (!empty($attributes)){
-                    return [
-                        "var" => $param,
-                        "index" => $index
-                    ];
-                }
-                $index++;
-            }
-            return null;
         }
 
         private function getRequestBody(){

@@ -43,30 +43,21 @@ use Daniel\Validator\Exceptions\ArgumentNotFoundException;
             $reflectionClassReference = new ReflectionClass($validationClassReference);
 
             $variables = $reflectionClassReference->getProperties();
-            $model = null;
-            
-            try {
-                $model = $reflectionClassReference->newInstanceWithoutConstructor();
-            } catch (\Throwable $th) {
-                throw new ValidationException("Erro ao instanciar a classe '$validationClassReference': " . $th->getMessage());
-            }
 
             foreach($variables as $var){
-                $this->validateField($model, $var, $request);
+                $this->validateField($var, $request);
             }
 
             if($this->hasErrors()){
                 throw new CompositeValidationException($this->errors);
             }
-
-            return $model;
         }
 
         public function hasErrors(){
             return !empty($this->errors);
         }
 
-        private function validateField(object &$model, ReflectionProperty $var, array &$reqBody){
+        private function validateField(ReflectionProperty $var, array &$reqBody){
             $varName = $var->getName();
             $attributes = $var->getAttributes();
             
@@ -90,44 +81,39 @@ use Daniel\Validator\Exceptions\ArgumentNotFoundException;
 
             if ($isArray && $applyValidation) {
                 $this->applyValidations($attributes, $value);
-                $this->validateArray($model, $var, $value);
+                $this->validateArray($var, $value);
             }else if ($isValidatableObject){
-                $this->validateObject($model, $var, $value);
+                $this->validateObject($var, $value);
             }else{
-                $var->setValue($model, $value);
-                $this->applyValidations($attributes, $value);
+                if(!$isObject){
+                    $this->applyValidations($attributes, $value);
+                }
             }
 
         }
 
-        private function validateObject(object &$model, ReflectionProperty $var, array $req){
+        private function validateObject(ReflectionProperty $var, array $req){
             $typeName =  $var->getType()->getName();
             $reflectionClassReference = new ReflectionClass($typeName);
 
             $variables = $reflectionClassReference->getProperties();
             
-            $modelInterno = $reflectionClassReference->newInstance();
-            $var->setValue($model, $modelInterno);
-            
             foreach($variables as $var){
-                $this->validateField($modelInterno, $var, $req);
+                $this->validateField($var, $req);
             }
         }
 
         private function validateDetachedObject(ReflectionClass $reflectionClassReference, array $req){
             $variables = $reflectionClassReference->getProperties();
             
-            $modelInterno = $reflectionClassReference->newInstance();
             foreach($variables as $var){
-                $this->validateField($modelInterno, $var, $req);
+                $this->validateField( $var, $req);
             }
-            return $modelInterno;
         }
 
-        private function validateArray(object &$model, ReflectionProperty $var, array $req){
+        private function validateArray(ReflectionProperty $var, array $req){
             $validList = AnnotationsUtils::isAnnotationPresent($var, ListOf::class);
             if($validList){
-                $arrayModel = [];
                 $className = AnnotationsUtils::getAnnotationArgs($var, ListOf::class)[0] ?? null;
                 if (!$className || !class_exists($className)) {
                     $this->errors[] = new ValidationException("Classe da lista não encontrada ou inválida");
@@ -137,15 +123,12 @@ use Daniel\Validator\Exceptions\ArgumentNotFoundException;
                     $reflectionClassReference = new ReflectionClass($className);
                     
                     foreach($req as $toValid){
-                        $arrayModel[] = $this->validateDetachedObject($reflectionClassReference, $toValid);
+                        $this->validateDetachedObject($reflectionClassReference, $toValid);
                     }
 
-                    $var->setValue($model, $arrayModel);
-                }else{
+                   }else{
                     $this->errors[] = new ValidationException("Classe da lista não encontrada ou inválida");
                 }
-            }else{
-                $var->setValue($model, $req);
             }
         }
 
