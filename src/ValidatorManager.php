@@ -46,7 +46,7 @@ use Daniel\Validator\Exceptions\ArgumentNotFoundException;
             $model = null;
             
             try {
-                $model = $reflectionClassReference->newInstance();
+                $model = $reflectionClassReference->newInstanceWithoutConstructor();
             } catch (\Throwable $th) {
                 throw new ValidationException("Erro ao instanciar a classe '$validationClassReference': " . $th->getMessage());
             }
