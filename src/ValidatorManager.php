@@ -2,15 +2,14 @@
 
     namespace Daniel\Validator;
 
+    use Daniel\Origins\Annotations\Serialization\ListOf;
     use Daniel\Origins\AnnotationsUtils;
-use Daniel\Origins\Log;
-use Daniel\Validator\Exceptions\ArgumentNotFoundException;
+    use Daniel\Validator\Exceptions\ArgumentNotFoundException;
     use Daniel\Validator\Exceptions\ValidationException;
     use Daniel\Validator\Exceptions\ValidationMethodNotAllowedException;
     use Daniel\Validator\Props\AbstractValidation;
     use Daniel\Validator\constraints\NotNull;
     use Daniel\Validator\Exceptions\CompositeValidationException;
-    use Daniel\Validator\Props\ListOf;
     use Daniel\Validator\Props\ProviderExtractor;
     use Daniel\Validator\Props\Valid;
     use ReflectionAttribute;
