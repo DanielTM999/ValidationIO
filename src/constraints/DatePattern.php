@@ -16,7 +16,7 @@
         public const DD_MM_YYYY = 'd/m/Y';
         public const YYYY_MM_DD_HH_MM = 'Y-m-d H:i';
 
-        public function __construct(array|string $patterns, string $message = "O valor informado não corresponde ao esperado.")
+        public function __construct(array|string $patterns, string $message = "A data informado não corresponde ao esperado.")
         {
             parent::__construct($message);
         }
