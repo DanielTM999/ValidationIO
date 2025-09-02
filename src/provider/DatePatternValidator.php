@@ -32,6 +32,8 @@
             $dt = \DateTime::createFromFormat($format, $value);
             $errors = \DateTime::getLastErrors();
 
+            if ($dt === false) return false;
+            if ($errors === false) return true;
             return $dt !== false && $errors['warning_count'] === 0 && $errors['error_count'] === 0;
         }
     }
