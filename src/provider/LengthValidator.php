@@ -16,6 +16,7 @@
 
         public function isValid($value): bool
         {
+            if($value === null) return true;
             if (!is_string($value)) {
                 return false;
             }

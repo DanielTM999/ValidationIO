@@ -14,6 +14,7 @@
 
         public function isValid($value): bool
         {
+            if($value === null) return true;
             if (!is_numeric($value)) {
                 return false;
             }
